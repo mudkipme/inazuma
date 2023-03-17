@@ -1,0 +1,19 @@
+listenAddr: :8080
+upstreamURL: http://example.com
+s3:
+  endpoint: https://s3.example.com
+  region: us-east-1
+  accessKeyID: YOUR_ACCESS_KEY_ID
+  secretAccessKey: YOUR_SECRET_ACCESS_KEY
+  bucket: your-bucket-name
+kafka:
+  brokers:
+    - kafka-broker-1:9092
+    - kafka-broker-2:9092
+  consumerGroup: inazuma_group
+  topic: inazuma
+  updateTopic: inazuma-update
+redis:
+  addr: redis:6379
+  password: YOUR_REDIS_PASSWORD
+  db: 0

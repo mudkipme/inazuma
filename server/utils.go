@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"log"
@@ -27,7 +27,7 @@ func containsNonUTMQueryParameters(u *url.URL) bool {
 	return false
 }
 
-func hasBypassCacheCookie(r *http.Request) bool {
+func hasBypassCacheCookie(r *http.Request, cookieToBypassCache string) bool {
 	if cookie, _ := r.Cookie(cookieToBypassCache); cookie != nil {
 		return true
 	}
