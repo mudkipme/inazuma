@@ -5,10 +5,10 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/go-redis/redis/v8"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/mudkipme/inazuma/config"
+	"github.com/redis/go-redis/v9"
 )
 
 var (
@@ -16,18 +16,18 @@ var (
 	redisClient *redis.Client
 )
 
-func StartServer(conf *config.Configuration) {
+func StartServer(conf *config.Config) {
 	err := setupS3Client(conf)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	ensureBucketExists(conf.S3Bucket)
+	ensureBucketExists(conf.Storage.S3Bucket)
 
 	redisClient = redis.NewClient(&redis.Options{
-		Addr:     conf.RedisAddr,
-		Password: conf.RedisPassword,
-		DB:       conf.RedisDB,
+		Addr:     conf.Redis.Addr,
+		Password: conf.Redis.Password,
+		DB:       conf.Redis.DB,
 	})
 
 	// Test Redis connection
@@ -58,16 +58,16 @@ func StartServer(conf *config.Configuration) {
 
 }
 
-func setupS3Client(conf *config.Configuration) error {
-	endpoint := conf.S3Endpoint               // Set the S3-like object storage endpoint
-	accessKeyID := conf.S3AccessKeyID         // Set the S3-like object storage access key ID
-	secretAccessKey := conf.S3SecretAccessKey // Set the S3-like object storage secret access key
+func setupS3Client(conf *config.Config) error {
+	endpoint := conf.Storage.S3Endpoint               // Set the S3-like object storage endpoint
+	accessKeyID := conf.Storage.S3AccessKeyID         // Set the S3-like object storage access key ID
+	secretAccessKey := conf.Storage.S3SecretAccessKey // Set the S3-like object storage secret access key
 
 	var err error
 	s3Client, err = minio.New(endpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(accessKeyID, secretAccessKey, ""),
 		Secure: false,
-		Region: conf.S3Region,
+		Region: conf.Storage.S3Region,
 	})
 	return err
 }

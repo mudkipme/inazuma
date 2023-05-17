@@ -1,5 +1,5 @@
 # Use the official Golang image as the base image
-FROM golang:1.17 as builder
+FROM golang:1.20 as builder
 
 # Set the working directory
 WORKDIR /app
@@ -16,8 +16,8 @@ COPY . .
 # Build the Go app
 RUN CGO_ENABLED=0 GOOS=linux go build -o inazuma .
 
-# Use the scratch image for the final image
-FROM scratch
+# Use the debian image for the final image
+FROM debian:buster
 
 # Copy the binary from the builder stage
 COPY --from=builder /app/inazuma /inazuma

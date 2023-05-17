@@ -69,4 +69,4 @@ The proxy server will start listening on port 8080 by default.
 
 Inazuma is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
-The initial commit of this project is 100% created with GPT-4, including this README file. Here are the [screenshots](screenshots/) of the conversation between me and the AI model.
+The initial commit of this project is 100% created with GPT-4, including the README file. Here are the [screenshots](https://github.com/mudkipme/inazuma/tree/0.0.1/screenshots) of the conversation between me and the AI model.

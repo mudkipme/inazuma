@@ -1,2 +1,5 @@
 .DS_Store
 /inazuma
+config.yml
+__debug_bin
+.vscode

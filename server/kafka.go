@@ -14,16 +14,16 @@ var (
 	kafkaUpdateWriter *kafka.Writer
 )
 
-func setupKafkaProducer(conf *config.Configuration) {
+func setupKafkaProducer(conf *config.Config) {
 	kafkaWriter = &kafka.Writer{
-		Addr:     kafka.TCP(conf.KafkaBrokers...),
-		Topic:    conf.KafkaTopic,
+		Addr:     kafka.TCP(conf.Queue.KafkaBrokers...),
+		Topic:    conf.Queue.KafkaTopic,
 		Balancer: &kafka.LeastBytes{},
 	}
 
 	kafkaUpdateWriter = &kafka.Writer{
-		Addr:     kafka.TCP(conf.KafkaBrokers...),
-		Topic:    conf.KafkaUpdateTopic,
+		Addr:     kafka.TCP(conf.Queue.KafkaBrokers...),
+		Topic:    conf.Queue.KafkaUpdateTopic,
 		Balancer: &kafka.LeastBytes{},
 	}
 }
@@ -53,10 +53,10 @@ func sendPurgeRequestToKafka(urlPath string) {
 	}
 }
 
-func startKafkaConsumer(conf *config.Configuration) {
+func startKafkaConsumer(conf *config.Config) {
 	r := kafka.NewReader(kafka.ReaderConfig{
-		Brokers:   conf.KafkaBrokers,
-		Topic:     conf.KafkaUpdateTopic,
+		Brokers:   conf.Queue.KafkaBrokers,
+		Topic:     conf.Queue.KafkaUpdateTopic,
 		Partition: 0,
 		MinBytes:  10e3,
 		MaxBytes:  10e6,

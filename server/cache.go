@@ -13,7 +13,7 @@ import (
 )
 
 // updateCache fetches content from the upstream server and saves it to cache.
-func updateCache(ctx context.Context, urlPath string, conf *config.Configuration) error {
+func updateCache(ctx context.Context, urlPath string, conf *config.Config) error {
 	cacheKeys := []string{urlPath, urlPath + "_zh-hans", urlPath + "_zh-hant"}
 	acceptLanguages := []string{"", "zh-hans", "zh-hant"}
 
@@ -27,14 +27,14 @@ func updateCache(ctx context.Context, urlPath string, conf *config.Configuration
 			req.Header.Set("Accept-Language", acceptLanguages[i])
 		}
 
-		resp, err := http.DefaultClient.Do(req)
+		resp, err := httpClient.Do(req)
 		if err != nil {
 			return fmt.Errorf("failed to fetch content from upstream server for cache update: %w", err)
 		}
 		defer resp.Body.Close()
 
 		if resp.StatusCode == http.StatusOK {
-			if err := saveToCache(ctx, conf.S3Bucket, cacheKey, resp.Body); err != nil {
+			if err := saveToCache(ctx, conf.Storage.S3Bucket, cacheKey, resp.Header.Get("Content-Type"), resp.Body); err != nil {
 				return fmt.Errorf("failed to save content to cache: %w", err)
 			}
 		} else {
@@ -46,12 +46,14 @@ func updateCache(ctx context.Context, urlPath string, conf *config.Configuration
 }
 
 // saveToCache saves the response body to the cache using the provided cacheBucketName and cacheKey.
-func saveToCache(ctx context.Context, cacheBucketName, cacheKey string, reader io.ReadCloser) error {
+func saveToCache(ctx context.Context, cacheBucketName, cacheKey, contentType string, reader io.ReadCloser) error {
 	body, err := io.ReadAll(reader)
 	if err != nil {
 		return fmt.Errorf("error reading upstream response: %w", err)
 	}
-	_, err = s3Client.PutObject(ctx, cacheBucketName, cacheKey, bytes.NewReader(body), int64(len(body)), minio.PutObjectOptions{})
+	_, err = s3Client.PutObject(ctx, cacheBucketName, cacheKey, bytes.NewReader(body), int64(len(body)), minio.PutObjectOptions{
+		ContentType: contentType,
+	})
 	if err != nil {
 		return fmt.Errorf("error saving content to cache with cache key %s: %w", cacheKey, err)
 	}

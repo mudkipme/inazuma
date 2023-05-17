@@ -1,61 +1,65 @@
 package config
 
 import (
+	"strings"
+
 	"github.com/spf13/viper"
 )
 
-type Configuration struct {
+type Config struct {
 	ListenAddr          string
 	UpstreamURL         string
-	S3Endpoint          string
-	S3Region            string
-	S3AccessKeyID       string
-	S3SecretAccessKey   string
-	S3Bucket            string
-	KafkaBrokers        []string
-	KafkaConsumerGroup  string
-	KafkaTopic          string
-	KafkaUpdateTopic    string
-	RedisAddr           string
-	RedisPassword       string
-	RedisDB             int
 	CookieToBypassCache string
+
+	Storage struct {
+		S3Endpoint        string
+		S3Region          string
+		S3AccessKeyID     string
+		S3SecretAccessKey string
+		S3Bucket          string
+	}
+
+	Queue struct {
+		KafkaBrokers       []string
+		KafkaConsumerGroup string
+		KafkaTopic         string
+		KafkaUpdateTopic   string
+	}
+
+	Redis struct {
+		Addr     string
+		Password string
+		DB       int
+	}
 }
 
-func LoadConfig() (*Configuration, error) {
+func LoadConfig() (*Config, error) {
 	viper.SetConfigName("config")
-	viper.AddConfigPath(".")
 	viper.AddConfigPath("/etc/inazuma/")
+	viper.AddConfigPath("$XDG_CONFIG_HOME/inazuma")
+	viper.AddConfigPath("$HOME/.config/inazuma")
+	viper.AddConfigPath(".")
 
-	viper.SetDefault("listenAddr", ":8080")
-	viper.SetDefault("kafkaConsumerGroup", "inazuma")
-	viper.SetDefault("kafkaTopic", "inazuma")
-	viper.SetDefault("kafkaUpdateTopic", "inazuma-update")
-	viper.SetDefault("cookieToBypass", "bypass-cookie")
-	viper.SetDefault("redisDB", 0)
+	viper.SetDefault("ListenAddr", ":8080")
+	viper.SetDefault("CookieToBypass", "bypass-cookie")
+	viper.SetDefault("Queue.KafkaConsumerGroup", "inazuma")
+	viper.SetDefault("Queue.KafkaTopic", "inazuma")
+	viper.SetDefault("Queue.KafkaUpdateTopic", "inazuma-update")
+	viper.SetDefault("Redis.DB", 0)
+
+	viper.SetEnvPrefix("inazuma")
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	viper.AutomaticEnv()
 
 	err := viper.ReadInConfig()
 	if err != nil {
 		return nil, err
 	}
 
-	conf := &Configuration{
-		ListenAddr:          viper.GetString("listenAddr"),
-		UpstreamURL:         viper.GetString("upstreamURL"),
-		S3Endpoint:          viper.GetString("s3.endpoint"),
-		S3Region:            viper.GetString("s3.region"),
-		S3AccessKeyID:       viper.GetString("s3.accessKeyID"),
-		S3SecretAccessKey:   viper.GetString("s3.secretAccessKey"),
-		S3Bucket:            viper.GetString("s3.bucket"),
-		KafkaBrokers:        viper.GetStringSlice("kafka.brokers"),
-		KafkaConsumerGroup:  viper.GetString("kafka.consumerGroup"),
-		KafkaTopic:          viper.GetString("kafka.topic"),
-		KafkaUpdateTopic:    viper.GetString("kafka.updateTopic"),
-		RedisAddr:           viper.GetString("redis.addr"),
-		RedisPassword:       viper.GetString("redis.password"),
-		RedisDB:             viper.GetInt("redis.db"),
-		CookieToBypassCache: viper.GetString("cookieToBypass"),
+	var conf Config
+	if err = viper.Unmarshal(&conf); err != nil {
+		return nil, err
 	}
 
-	return conf, nil
+	return &conf, nil
 }
