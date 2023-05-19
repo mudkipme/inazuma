@@ -14,32 +14,23 @@ import (
 
 // updateCache fetches content from the upstream server and saves it to cache.
 func updateCache(ctx context.Context, urlPath string, conf *config.Config) error {
-	cacheKeys := []string{urlPath, urlPath + "_zh-hans", urlPath + "_zh-hant"}
-	acceptLanguages := []string{"", "zh-hans", "zh-hant"}
+	req, err := http.NewRequestWithContext(ctx, "GET", conf.UpstreamURL+urlPath, nil)
+	if err != nil {
+		return fmt.Errorf("failed to create request for cache update: %w", err)
+	}
 
-	for i, cacheKey := range cacheKeys {
-		req, err := http.NewRequestWithContext(ctx, "GET", conf.UpstreamURL+urlPath, nil)
-		if err != nil {
-			return fmt.Errorf("failed to create request for cache update: %w", err)
-		}
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to fetch content from upstream server for cache update: %w", err)
+	}
+	defer resp.Body.Close()
 
-		if acceptLanguages[i] != "" {
-			req.Header.Set("Accept-Language", acceptLanguages[i])
+	if resp.StatusCode == http.StatusOK {
+		if err := saveToCache(ctx, conf.Storage.S3Bucket, urlPath, resp.Header.Get("Content-Type"), resp.Body); err != nil {
+			return fmt.Errorf("failed to save content to cache: %w", err)
 		}
-
-		resp, err := httpClient.Do(req)
-		if err != nil {
-			return fmt.Errorf("failed to fetch content from upstream server for cache update: %w", err)
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode == http.StatusOK {
-			if err := saveToCache(ctx, conf.Storage.S3Bucket, cacheKey, resp.Header.Get("Content-Type"), resp.Body); err != nil {
-				return fmt.Errorf("failed to save content to cache: %w", err)
-			}
-		} else {
-			return fmt.Errorf("upstream server returned an error status for cache update: %d", resp.StatusCode)
-		}
+	} else {
+		return fmt.Errorf("upstream server returned an error status for cache update: %d", resp.StatusCode)
 	}
 
 	return redisClient.Set(ctx, urlPath, time.Now().UTC().Format(time.RFC3339), 0).Err()

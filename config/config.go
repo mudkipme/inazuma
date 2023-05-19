@@ -6,10 +6,23 @@ import (
 	"github.com/spf13/viper"
 )
 
+type CachePattern struct {
+	Path         string
+	ReplaceRules []struct {
+		Match        int
+		Replacements []struct {
+			Replacement     string
+			LanguageMatches []string
+			Default         bool
+		}
+	}
+	Purge bool
+}
+
 type Config struct {
 	ListenAddr          string
 	UpstreamURL         string
-	CookieToBypassCache string
+	CookieToBypassCache []string
 
 	Storage struct {
 		S3Endpoint        string
@@ -31,6 +44,8 @@ type Config struct {
 		Password string
 		DB       int
 	}
+
+	CachePatterns []CachePattern
 }
 
 func LoadConfig() (*Config, error) {
@@ -41,7 +56,6 @@ func LoadConfig() (*Config, error) {
 	viper.AddConfigPath(".")
 
 	viper.SetDefault("ListenAddr", ":8080")
-	viper.SetDefault("CookieToBypass", "bypass-cookie")
 	viper.SetDefault("Queue.KafkaConsumerGroup", "inazuma")
 	viper.SetDefault("Queue.KafkaTopic", "inazuma")
 	viper.SetDefault("Queue.KafkaUpdateTopic", "inazuma-update")

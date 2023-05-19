@@ -1,6 +1,7 @@
 ListenAddr: :8080
 UpstreamURL: http://example.com
-CookieToBypassCache: session-id
+CookieToBypassCache:
+- session-id
 Storage:
   Endpoint: https://s3.example.com
   Region: us-east-1
@@ -15,6 +16,23 @@ Queue:
   KafkaTopic: inazuma
   KafkaUpdateTopic: inazuma-update
 Redis:
-  addr: redis:6379
-  password: YOUR_REDIS_PASSWORD
-  db: 0
+  Addr: redis:6379
+  Password: YOUR_REDIS_PASSWORD
+  DB: 0
+CachePatterns:
+- Path: ^/(wiki)/
+  ReplaceRules:
+  - Match: 1
+    Replacements:
+    - Replacement: 'zh-hans'
+      LanguageMatches: ['zh-hans', 'zh-cn', 'zh-my', 'zh-sg']
+    - Replacement: 'zh-hant'
+      LanguageMatches: ['zh-hant', 'zh-tw', 'zh-hk', 'zh-mo']
+    - Replacement: 'zh'
+      Default: true
+- Path: ^/zh/
+  Purge: true
+- Path: ^/zh-hans/
+  Purge: true
+- Path: ^/zh-hant/
+  Purge: true

@@ -15,7 +15,12 @@ var httpClient *http.Client
 
 // purgeHandler sends a purge request to Kafka and returns a status accepted response.
 func purgeHandler(w http.ResponseWriter, r *http.Request, conf *config.Config) {
-	sendPurgeRequestToKafka(r.URL.Path)
+	cacheKey, purge := getCacheKey(r, conf.CachePatterns)
+	if !purge {
+		return
+	}
+
+	sendPurgeRequestToKafka(cacheKey)
 	w.WriteHeader(http.StatusAccepted)
 }
 
@@ -52,11 +57,12 @@ func getHandler(w http.ResponseWriter, r *http.Request, conf *config.Config) {
 		return
 	}
 
-	// Get cache key suffix based on Accept-Language header
-	cacheKeySuffix := getCacheKeySuffix(r)
-
-	// Update the URL path to include the cache key suffix
-	urlPath := r.URL.Path + cacheKeySuffix
+	// Get cache key based on Accept-Language header
+	urlPath, _ := getCacheKey(r, conf.CachePatterns)
+	if urlPath == "" {
+		directProxy(w, r, conf)
+		return
+	}
 
 	object, err := s3Client.GetObject(r.Context(), conf.Storage.S3Bucket, urlPath, minio.GetObjectOptions{})
 	if err != nil {
